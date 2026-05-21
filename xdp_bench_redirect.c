@@ -22,6 +22,8 @@
 #define UDP_69_SRC bpf_htons(49154)
 #define UDP_69_DST bpf_htons(49155)
 
+#define UDP_SRC_MULTI_FLOW_MIN 49152
+
 #ifndef IP_MF
 #define IP_MF 0x2000
 #endif
@@ -58,6 +60,32 @@ static __always_inline int redirect_to_xsk(struct xdp_md *ctx)
 		return XDP_PASS;
 
 	return bpf_redirect_map(&xsks_map, qid, XDP_PASS);
+}
+
+static __always_inline bool lcore_is_57_sender(__u8 lcore)
+{
+	return (lcore >= 3 && lcore <= 7) || (lcore >= 10 && lcore <= 15);
+}
+
+static __always_inline bool lcore_is_69_sender(__u8 lcore)
+{
+	return (lcore >= 3 && lcore <= 15) || (lcore >= 18 && lcore <= 31);
+}
+
+static __always_inline bool sport_is_57_sender_multiflow(__u16 sport)
+{
+	if (sport < UDP_SRC_MULTI_FLOW_MIN)
+		return false;
+
+	return lcore_is_57_sender((__u8)(sport & 0xff));
+}
+
+static __always_inline bool sport_is_69_sender_multiflow(__u16 sport)
+{
+	if (sport < UDP_SRC_MULTI_FLOW_MIN)
+		return false;
+
+	return lcore_is_69_sender((__u8)(sport & 0xff));
 }
 
 SEC("xdp")
@@ -108,16 +136,21 @@ int xdp_bench_redirect(struct xdp_md *ctx)
 
 	if (iph->protocol == IPPROTO_UDP) {
 		struct udphdr *udp = (void *)iph + ihl;
+		__u16 sport;
 
 		if ((void *)(udp + 1) > data_end)
 			return XDP_PASS;
 
+		sport = bpf_ntohs(udp->source);
+
 		if (dst_69 && iph->saddr == IP_57 && iph->daddr == IP_69 &&
-		    udp->source == UDP_57_SRC && udp->dest == UDP_57_DST)
+		    udp->dest == UDP_57_DST &&
+		    (udp->source == UDP_57_SRC || sport_is_57_sender_multiflow(sport)))
 			return redirect_to_xsk(ctx);
 
 		if (dst_57 && iph->saddr == IP_69 && iph->daddr == IP_57 &&
-		    udp->source == UDP_69_SRC && udp->dest == UDP_69_DST)
+		    udp->dest == UDP_69_DST &&
+		    (udp->source == UDP_69_SRC || sport_is_69_sender_multiflow(sport)))
 			return redirect_to_xsk(ctx);
 	}
 

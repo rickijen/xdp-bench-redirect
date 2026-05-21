@@ -9,12 +9,20 @@ missing AF_XDP sockets.
 
 ## Benchmark Flows
 
-The program matches these two flows:
+The program matches these two benchmark directions. For each direction, the
+destination UDP port stays fixed. The source UDP port may either be the fixed
+port below or a DPDK `testpmd --txonly-multi-flow` source port in the
+49152-65535 range whose low byte matches one of the sender lcores.
 
 | Direction | Destination MAC | Source IP | Destination IP | Source UDP | Destination UDP |
 | --- | --- | --- | --- | --- | --- |
-| `10.10.0.10 -> 10.10.0.11` | `5e:9f:1b:3c:4d:2a` | `198.18.57.1` | `198.18.69.1` | `49152` | `49153` |
-| `10.10.0.11 -> 10.10.0.10` | `5a:3f:1b:22:8c:4e` | `198.18.69.1` | `198.18.57.1` | `49154` | `49155` |
+| `10.10.0.10 -> 10.10.0.11` | `5e:9f:1b:3c:4d:2a` | `198.18.57.1` | `198.18.69.1` | `49152` or multi-flow lcore low byte `3-7,10-15` | `49153` |
+| `10.10.0.11 -> 10.10.0.10` | `5a:3f:1b:22:8c:4e` | `198.18.69.1` | `198.18.57.1` | `49154` or multi-flow lcore low byte `3-15,18-31` | `49155` |
+
+DPDK `testpmd --txonly-multi-flow` varies the UDP source port so RSS can
+spread generated traffic across receiver queues. This program keeps that
+entropy bounded to the lcore sets above and still returns `XDP_PASS` for
+everything else.
 
 ## Install Build Tools
 
