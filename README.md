@@ -67,45 +67,6 @@ DPDK AF_XDP must bind only benchmark queues:
 
 Do not use `start_queue=0` while SSH shares the benchmark NIC.
 
-## Benchmark Flows
-
-The program matches these two benchmark directions. For each direction, the
-destination UDP port stays fixed. The source UDP port may either be the fixed
-port below or a DPDK `testpmd --txonly-multi-flow` source port in the
-49152-65535 range whose low byte matches one of the sender lcores.
-
-| Direction | Destination MAC | Source IP | Destination IP | Source UDP | Destination UDP |
-| --- | --- | --- | --- | --- | --- |
-| `.68 -> .69` | `e8:eb:d3:ef:7f:16` | `198.18.57.1` | `198.18.69.1` | `49152` or multi-flow lcore low byte `3-7,10-15` | `49153` |
-| `.69 -> .68` | `08:c0:eb:ca:2a:d2` | `198.18.69.1` | `198.18.57.1` | `49154` or multi-flow lcore low byte `3-15,18-31` | `49155` |
-
-DPDK `testpmd --txonly-multi-flow` varies the UDP source port so RSS can
-spread generated traffic across receiver queues. This program keeps that
-entropy bounded to the lcore sets above and still returns `XDP_PASS` for
-everything else.
-
-## Benchmark Artifacts
-
-The latest reserved-queue AF_XDP multi-flow benchmark report is included under
-`benchmarks/`:
-
-```text
-benchmarks/dpdk_testpmd_af_xdp_multiflow_reservedq_benchmark_2026-05-21.md
-benchmarks/dpdk_testpmd_af_xdp_multiflow_reservedq_benchmark_2026-05-21.csv
-```
-
-Summary:
-
-| Direction | RX Mpps | RX L1 Gbps | Delivery | SSH |
-| --- | ---: | ---: | ---: | --- |
-| `.68 -> .69` | 35.1285 | 23.6064 | 99.9438% | pass |
-| `.69 -> .68` | 33.0142 | 22.1855 | 60.7936% | pass |
-
-For comparing `mlx5` PMD against AF_XDP PMD, use RX Mpps as the primary
-metric and RX L1 Gbps as the line-rate companion metric. TX packets are not a
-good primary comparison because the AF_XDP sender can overgenerate and report
-large TX drops/errors.
-
 ## Install Build Tools
 
 On Ubuntu:
