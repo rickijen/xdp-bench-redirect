@@ -39,10 +39,6 @@ xdp_bench_redirect_multiflow.o:
   574f03d2292919f3ec2b86808ba613861171e7a9537b64d0c8a3a0d6eab04833
 ```
 
-Older exact-flow `/tmp/afxdp_bench/xdp_bench_redirect.c` copies were removed
-from both benchmark hosts to avoid confusing them with the current multi-flow
-source.
-
 ## Reserved-Queue Safety Model
 
 The benchmark NIC is shared by benchmark traffic and SSH management traffic, so
@@ -61,8 +57,8 @@ Ingress packet
 DPDK AF_XDP must bind only benchmark queues:
 
 ```text
-10.46.68.57: start_queue=1, queue_count=15, --rxq=15 --txq=15
-10.46.69.45: start_queue=1, queue_count=31, --rxq=31 --txq=31
+10.10.0.10: start_queue=1, queue_count=15, --rxq=15 --txq=15
+10.10.0.11: start_queue=1, queue_count=31, --rxq=31 --txq=31
 ```
 
 Do not use `start_queue=0` while SSH shares the benchmark NIC.
@@ -188,7 +184,7 @@ sudo dpdk-testpmd -l 2-7,10-15 -n 4 --no-pci --huge-unlink=always \
   --file-prefix=afxtx68 \
   --vdev=net_af_xdp0,iface=enp1s0f0np0,start_queue=1,queue_count=15,xdp_prog=/tmp/afxdp_bench/xdp_bench_redirect_multiflow.o \
   -- --nb-cores=11 --rxq=15 --txq=15 --txonly-multi-flow --rss-udp -i --disable-device-start \
-  --port-topology=chained --eth-peer=0,e8:eb:d3:ef:7f:16 \
+  --port-topology=chained --eth-peer=0,5e:9f:1b:3c:4d:2a \
   --tx-ip=198.18.57.1,198.18.69.1 --tx-udp=49152,49153
 ```
 
@@ -206,7 +202,7 @@ start
 Reverse direction uses the analogous sender settings:
 
 ```text
---eth-peer=0,08:c0:eb:ca:2a:d2
+--eth-peer=0,5a:3f:1b:22:8c:4e
 --tx-ip=198.18.69.1,198.18.57.1
 --tx-udp=49154,49155
 ```
