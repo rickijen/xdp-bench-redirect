@@ -139,7 +139,7 @@ sudo bpftool net
 
 ## Configure Reserved Queue Steering
 
-On `.68`:
+On `Server A`:
 
 ```bash
 sudo ethtool -K enp1s0f0np0 ntuple on
@@ -147,7 +147,7 @@ sudo ethtool -N enp1s0f0np0 flow-type tcp4 dst-port 22 action 0 loc 1
 sudo ethtool -X enp1s0f0np0 weight 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 ```
 
-On `.69`:
+On `Server B`:
 
 ```bash
 sudo ethtool -K ens65f0np0 ntuple on
@@ -168,7 +168,7 @@ Only queues that have AF_XDP sockets in `xsks_map` can receive redirected
 packets. If there is no socket for `ctx->rx_queue_index`, this program returns
 `XDP_PASS`.
 
-Receiver on `.69`:
+Receiver on `Server B`:
 
 ```bash
 sudo dpdk-testpmd -l 2-15,18-31 -n 4 --no-pci --huge-unlink=always \
@@ -177,7 +177,7 @@ sudo dpdk-testpmd -l 2-15,18-31 -n 4 --no-pci --huge-unlink=always \
   -- --nb-cores=27 --rxq=31 --txq=31 --rss-udp -i --disable-device-start --port-topology=chained
 ```
 
-Sender on `.68`:
+Sender on `Server A`:
 
 ```bash
 sudo dpdk-testpmd -l 2-7,10-15 -n 4 --no-pci --huge-unlink=always \
@@ -209,7 +209,7 @@ Reverse direction uses the analogous sender settings:
 
 ## Restore Defaults
 
-On `.68`:
+On `Server A`:
 
 ```bash
 sudo ip link set dev enp1s0f0np0 xdp off 2>/dev/null || true
@@ -218,7 +218,7 @@ sudo ethtool -N enp1s0f0np0 delete 1 2>/dev/null || true
 sudo ethtool -K enp1s0f0np0 ntuple off
 ```
 
-On `.69`:
+On `Server B`:
 
 ```bash
 sudo ip link set dev ens65f0np0 xdp off 2>/dev/null || true
