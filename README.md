@@ -137,24 +137,6 @@ sudo ip link set dev "$IFACE" xdp off
 sudo bpftool net
 ```
 
-## Configure Reserved Queue Steering
-
-On `Server A`:
-
-```bash
-sudo ethtool -K enp1s0f0np0 ntuple on
-sudo ethtool -N enp1s0f0np0 flow-type tcp4 dst-port 22 action 0 loc 1
-sudo ethtool -X enp1s0f0np0 weight 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-```
-
-On `Server B`:
-
-```bash
-sudo ethtool -K ens65f0np0 ntuple on
-sudo ethtool -N ens65f0np0 flow-type tcp4 dst-port 22 action 0 loc 1
-sudo ethtool -X ens65f0np0 weight 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-```
-
 ## DPDK AF_XDP Usage
 
 The DPDK AF_XDP PMD should be started with this object via `xdp_prog=...` so
@@ -188,41 +170,3 @@ sudo dpdk-testpmd -l 2-7,10-15 -n 4 --no-pci --huge-unlink=always \
   --tx-ip=198.18.57.1,198.18.69.1 --tx-udp=49152,49153
 ```
 
-Interactive TX settings:
-
-```text
-port start 0
-set fwd txonly
-set txpkts 64
-set burst 32
-clear port stats all
-start
-```
-
-Reverse direction uses the analogous sender settings:
-
-```text
---eth-peer=0,5a:3f:1b:22:8c:4e
---tx-ip=198.18.69.1,198.18.57.1
---tx-udp=49154,49155
-```
-
-## Restore Defaults
-
-On `Server A`:
-
-```bash
-sudo ip link set dev enp1s0f0np0 xdp off 2>/dev/null || true
-sudo ethtool -X enp1s0f0np0 default
-sudo ethtool -N enp1s0f0np0 delete 1 2>/dev/null || true
-sudo ethtool -K enp1s0f0np0 ntuple off
-```
-
-On `Server B`:
-
-```bash
-sudo ip link set dev ens65f0np0 xdp off 2>/dev/null || true
-sudo ethtool -X ens65f0np0 default
-sudo ethtool -N ens65f0np0 delete 1 2>/dev/null || true
-sudo ethtool -K ens65f0np0 ntuple off
-```
